@@ -2,147 +2,213 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Ingreso de Estudiantes - IPEC Barva</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
+    html, body {
+      height: 100%;
+      width: 100vw;
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+      background: #f4f6fb;
+    }
     body {
-      font-family:'Inter',Arial,sans-serif;
-      background:#f4f6fb;
-      color:#1d2740;
-      margin:0;
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
+      font-family: 'Inter', Arial, sans-serif;
+      color: #1d2740;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
       justify-content: flex-start;
       align-items: center;
     }
     header {
-      padding: 32px 0 12px 0;
+      padding: 22px 0 10px 0;
       text-align: center;
       background: #fff;
       border-bottom: 1px solid #e6e8ee;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       width: 100vw;
-      max-width: 100%;
+      max-width: 100vw;
+      z-index: 100;
     }
     header img {
-      max-width: 135px;
+      max-width: 100px;
+      width: 33vw;
+      min-width: 56px;
       display: block;
-      margin: 0 auto 9px auto;
+      margin: 0 auto 7px auto;
       border-radius: 10px;
     }
     header h1 {
-      font-size: 2em;
+      font-size: 1.5em;
       margin: 0;
       font-weight: 600;
-      letter-spacing: 1px;
+      letter-spacing: 0.7px;
     }
     header h2 {
-      font-size: 1.1em;
-      margin: 10px 0 0 0;
+      font-size: 1em;
+      margin: 7px 0 0 0;
       font-weight: 400;
       color: #4674A9;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
     .main-content {
       flex: 1 0 auto;
-      width: 100%;
+      width: 100vw;
+      max-width: 100vw;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
     }
     .login-container, .qr-container, .cambio-container {
-      background:#fff;
-      border-radius:11px;
-      box-shadow:0 2px 15px #1b243420;
-      padding:32px 26px 20px 26px;
-      max-width:380px;
-      width:100%;
-      text-align:center;
-      margin: 25px 0 30px 0;
+      background: #fff;
+      border-radius: 11px;
+      box-shadow: 0 2px 15px #1b243420;
+      padding: 20px 5vw 20px 5vw;
+      max-width: 430px;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      margin: 22px auto 20px auto;
     }
-    h2 { font-weight:600; color:#335188; }
+    h2 {
+      font-weight: 600;
+      color: #335188;
+      font-size: 1.15em;
+      margin: 2px 0 18px 0;
+    }
     input[type="text"], input[type="password"] {
-      width:100%;
-      padding:10px 8px;
-      margin:10px 0 10px 0;
-      border-radius:5px;
-      border:1px solid #b7c4da;
-      font-size:1em;
+      width: 100%;
+      padding: 13px 8px;
+      margin: 10px 0 10px 0;
+      border-radius: 6px;
+      border: 1.2px solid #b7c4da;
+      font-size: 1.09em;
+      background: #f8fafc;
+      transition: border 0.18s;
+      text-align: center;
+      display: block;
     }
-    input:focus { border: 1.5px solid #3e6bc9;}
+    input:focus {
+      border: 1.6px solid #3e6bc9;
+      outline: none;
+      background: #f0f5ff;
+    }
     button {
-      background:#375c91;
-      color:#fff;
-      border:none;
-      border-radius:6px;
-      padding:9px 0;
-      width:100%;
-      font-weight:600;
-      font-size:1.06em;
-      margin:15px 0 6px 0;
+      background: #375c91;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 13px 0;
+      width: 100%;
+      font-weight: 600;
+      font-size: 1.12em;
+      margin: 15px 0 6px 0;
+      box-shadow: 0 1px 6px #25509513;
+      cursor: pointer;
+      transition: background .17s;
+    }
+    button:active, button:focus {
+      background: #28447c;
+      outline: none;
     }
     #msg, #msgCambio {
-      min-height:30px;
-      color:#e03e3e;
-      margin-bottom:7px;
+      min-height: 32px;
+      color: #e03e3e;
+      margin-bottom: 8px;
+      font-size: 1em;
     }
     #bienvenida {
-      color:#18863d;
-      font-weight:600;
-      font-size:1.18em;
-      margin-bottom:8px;
+      color: #18863d;
+      font-weight: 600;
+      font-size: 1.08em;
+      margin-bottom: 7px;
+      margin-top: 6px;
     }
     #qrCanvas {
-      margin: 24px auto 12px auto;
-      background:#fff;
-      padding:10px;
-      border-radius:10px;
-      display:block;
+      margin: 18px auto 10px auto;
+      background: #fff;
+      padding: 8px;
+      border-radius: 11px;
+      display: block;
+      width: 76vw !important;
+      max-width: 320px;
+      min-width: 128px;
+      height: auto;
+      box-shadow: 0 2px 10px #2351870c;
     }
     #datosEstudianteQR {
-      margin:14px 0 5px 0;
-      font-size:1.12em;
-      color:#24436a;
-      font-weight:500;
+      margin: 10px 0 6px 0;
+      font-size: 1.08em;
+      color: #24436a;
+      font-weight: 500;
+      line-height: 1.24;
     }
     #cambiarPass {
-      background:#e1e7f6;
-      color:#28447c;
-      font-size:0.97em;
-      margin:6px auto 0 auto;
-      border:1px solid #bfd5f2;
-      width:80%;
+      background: #e1e7f6;
+      color: #28447c;
+      font-size: 1em;
+      margin: 7px auto 0 auto;
+      border: 1px solid #bfd5f2;
+      width: 85%;
     }
     .volver-login {
-      color:#2341b0;
-      cursor:pointer;
-      font-size:0.98em;
-      margin-top:10px;
-      display:inline-block;
+      color: #2341b0;
+      cursor: pointer;
+      font-size: 1.01em;
+      margin-top: 12px;
+      display: inline-block;
+      font-weight: 500;
     }
-    .volver-login:hover { text-decoration:underline;}
+    .volver-login:hover {
+      text-decoration: underline;
+      color: #153089;
+    }
     footer {
       text-align: center;
-      font-size: 0.97em;
+      font-size: 0.98em;
       color: #8190a8;
       background: #f7fafd;
-      padding: 24px 2vw 14px 2vw;
-      letter-spacing: 0.18px;
+      padding: 19px 2vw 13px 2vw;
+      letter-spacing: 0.14px;
       border-top: 1px solid #e6e8ee;
       flex-shrink: 0;
       width: 100vw;
-      max-width: 100%;
+      max-width: 100vw;
+      margin-top: auto;
+      line-height: 1.4;
     }
     @media (max-width: 500px) {
-      header { padding: 18px 0 8px 0; }
       .login-container, .qr-container, .cambio-container {
-        padding:18px 2vw 13px 2vw; margin: 9px 0 15px 0;
+        padding: 12px 2vw 13px 2vw;
       }
-      #qrCanvas { width: 98vw !important; max-width: 300px; }
+      #qrCanvas { width: 93vw !important; max-width: 96vw; }
+      h2 { font-size: 1.01em; }
+      #bienvenida { font-size: 0.99em; }
+      #datosEstudianteQR { font-size: 0.97em; }
+      input[type="text"], input[type="password"] {
+        width: 92%;
+        margin: 10px auto;
+        padding: 8px 6px;
+        font-size: 0.99em;
+        border-radius: 4px;
+        text-align: center;
+        display: block;
+      }
+      button, #cambiarPass {
+        font-size: 0.97em;
+        padding: 10px 0;
+        border-radius: 4.5px;
+      }
+    }
+    @media (max-width: 370px) {
+      .login-container, .qr-container, .cambio-container { padding: 5px 2vw; }
+      input[type="text"], input[type="password"] { width: 97%; }
     }
   </style>
 </head>
@@ -199,7 +265,6 @@
     let estudianteActual = null;
     let cedulaActual = "";
 
-    // Mostrar sólo login
     function mostrarLogin() {
       loginView.style.display = '';
       qrView.style.display = 'none';
@@ -211,7 +276,6 @@
       cedulaActual = "";
     }
 
-    // LOGIN
     document.getElementById("loginForm").onsubmit = async function(e){
       e.preventDefault();
       document.getElementById('msg').textContent = '';
@@ -219,7 +283,6 @@
       let cedula = document.getElementById('cedula').value.trim();
       let password = document.getElementById('password').value.trim();
       if(!cedula || !password) return;
-      // Busca credencial
       const { data: login, error } = await supabaseClient
         .from('estudiante_login')
         .select('cedula')
@@ -231,7 +294,6 @@
         document.getElementById('msg').textContent = "Cédula o contraseña incorrecta.";
         return;
       }
-      // Busca nombre para bienvenida
       const { data: estudiante } = await supabaseClient
         .from('estudiantes')
         .select('nombre_completo')
@@ -243,29 +305,25 @@
       mostrarQR();
     }
 
-    // MOSTRAR QR
     function mostrarQR(){
       loginView.style.display = 'none';
       cambioView.style.display = 'none';
       qrView.style.display = '';
       let nombre = estudianteActual && estudianteActual.nombre_completo ? estudianteActual.nombre_completo : cedulaActual;
       document.getElementById('bienvenida').textContent = "¡Bienvenido, " + nombre + "!";
-      // QR
       const canvas = document.getElementById("qrCanvas");
-      QRCode.toCanvas(canvas, cedulaActual, { width: 310 }, function (error) {
+      QRCode.toCanvas(canvas, cedulaActual, { width: Math.min(window.innerWidth*0.88, 310) }, function (error) {
         if (error) {
-          canvas.getContext("2d").clearRect(0, 0, 320, 320);
+          canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
           canvas.getContext("2d").fillText("Error generando QR", 20, 150);
         }
       });
-      // Mostrar datos debajo del QR
       document.getElementById('datosEstudianteQR').innerHTML = `
         <div>${nombre}</div>
         <div style="font-size:.95em; color:#375c91; font-weight:400;">Cédula: ${cedulaActual}</div>
       `;
     }
 
-    // CAMBIO CONTRASEÑA
     document.getElementById("cambiarPass").onclick = function() {
       loginView.style.display = 'none';
       qrView.style.display = 'none';
@@ -287,7 +345,6 @@
         document.getElementById('msgCambio').textContent = "La nueva contraseña no coincide.";
         return;
       }
-      // Verifica actual
       const { data: login } = await supabaseClient
         .from('estudiante_login')
         .select('cedula')
@@ -298,7 +355,6 @@
         document.getElementById('msgCambio').textContent = "Cédula o contraseña actual incorrecta.";
         return;
       }
-      // Cambia
       const { error } = await supabaseClient
         .from('estudiante_login')
         .update({ password: newPass1 })
@@ -309,12 +365,11 @@
       }
       document.getElementById('msgCambio').style.color = "#16863d";
       document.getElementById('msgCambio').textContent = "Contraseña actualizada exitosamente.";
-      setTimeout(mostrarLogin, 1600);
+      setTimeout(mostrarLogin, 1500);
     }
-
-    // Vuelve al login desde cambio/QR
     window.mostrarLogin = mostrarLogin;
   </script>
 </body>
 </html>
+
 
