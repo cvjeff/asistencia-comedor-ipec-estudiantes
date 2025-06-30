@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Ingreso de Estudiantes - IPEC Barva</title>
-  <!-- Manifest PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#375c91">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -172,6 +171,36 @@
       text-decoration: underline;
       color: #153089;
     }
+    #msgReserva {
+      margin: 8px 0 7px 0;
+      font-size: 1.02em;
+      min-height: 18px;
+      font-weight: 500;
+    }
+    #btnReservarTiquete {
+      background: #4674A9;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 0;
+      margin: 10px 0 0 0;
+      width: 100%;
+      font-size: 1.08em;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 7px #2341b013;
+      transition: background .17s;
+    }
+    #btnReservarTiquete:active, #btnReservarTiquete:focus {
+      background: #183357;
+      outline: none;
+    }
+    .info-rango {
+      font-size: 0.95em;
+      color: #2341b0;
+      margin: 3px 0 0 0;
+      font-weight: 400;
+    }
     footer {
       text-align: center;
       font-size: 0.98em;
@@ -186,7 +215,6 @@
       margin-top: auto;
       line-height: 1.4;
     }
-    /* Responsive */
     @media (max-width: 500px) {
       .login-container, .qr-container, .cambio-container {
         padding: 12px 2vw 13px 2vw;
@@ -277,12 +305,12 @@
       <div id="bienvenida"></div>
       <canvas id="qrCanvas" width="320" height="320"></canvas>
       <div id="datosEstudianteQR"></div>
+      <div id="msgReserva"></div>
+      <div id="divReserva"></div>
       <div style="margin:10px 0 5px 0; color:#4d6788;">Presente este código en el control de asistencia.</div>
       <div class="volver-login" onclick="mostrarLogin()">← Salir</div>
     </div>
   </div>
-
-  <!-- Popup instalar app -->
   <div id="pwaPrompt">
     <div style="font-size:1.04em; color:#214889;">
       <b>¿Desea instalar esta app en su celular?</b><br>
@@ -290,12 +318,11 @@
     </div>
     <button id="ocultarPwaPrompt">No volver a mostrar</button>
   </div>
-
   <footer>
     Todos los derechos reservados: Ing. Jeffry Carballo Vargas, Mag.
   </footer>
   <script>
-    // Supabase config
+    // --- CONFIGURACIÓN SUPABASE ---
     const supabaseUrl = 'https://pqwpieuxyudsvetytoac.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxd3BpZXV4eXVkc3ZldHl0b2FjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwNTQ5MjksImV4cCI6MjA2NjYzMDkyOX0.FZOSbJTSiedP1yrwgXn_GLLeELxfzQ13fnIss7aDaJ4';
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
@@ -306,6 +333,13 @@
 
     let estudianteActual = null;
     let cedulaActual = "";
+
+    // Función para obtener fecha local en formato YYYY-MM-DD sin desfase UTC
+    function getFechaLocalISO() {
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      return d.toISOString().slice(0, 10);
+    }
 
     function mostrarLogin() {
       loginView.style.display = '';
@@ -338,7 +372,7 @@
       }
       const { data: estudiante } = await supabaseClient
         .from('estudiantes')
-        .select('nombre_completo')
+        .select('*')
         .eq('cedula', cedula)
         .maybeSingle();
 
@@ -352,6 +386,8 @@
       cambioView.style.display = 'none';
       qrView.style.display = '';
       let nombre = estudianteActual && estudianteActual.nombre_completo ? estudianteActual.nombre_completo : cedulaActual;
+      let area = estudianteActual && estudianteActual.area_academica ? estudianteActual.area_academica : "";
+      let turno = estudianteActual && estudianteActual.turno ? estudianteActual.turno : "";
       document.getElementById('bienvenida').textContent = "¡Bienvenido, " + nombre + "!";
       const canvas = document.getElementById("qrCanvas");
       QRCode.toCanvas(canvas, cedulaActual, { width: Math.min(window.innerWidth*0.88, 310) }, function (error) {
@@ -363,7 +399,89 @@
       document.getElementById('datosEstudianteQR').innerHTML = `
         <div>${nombre}</div>
         <div style="font-size:.95em; color:#375c91; font-weight:400;">Cédula: ${cedulaActual}</div>
+        <div style="font-size:.95em; color:#375c91;">${area ? "Área: " + area : ""}${turno ? " - Turno: " + turno : ""}</div>
       `;
+      mostrarReserva();
+    }
+
+    // --- LÓGICA DE RESERVA DE TIQUETE ---
+    async function mostrarReserva() {
+      const divReserva = document.getElementById('divReserva');
+      const msgReserva = document.getElementById('msgReserva');
+      divReserva.innerHTML = '';
+      msgReserva.textContent = '';
+      if (!estudianteActual || !estudianteActual.turno) return;
+
+      let ahora = new Date();
+      let hora = ahora.getHours();
+      let min = ahora.getMinutes();
+      let puede = false, rango = "";
+      let turnoLimpio = (estudianteActual.turno || "").toLowerCase().trim();
+      if (turnoLimpio === "día" || turnoLimpio === "dia") {
+        puede = (hora >= 8 && (hora < 10 || (hora === 10 && min === 0)));
+        rango = "8:00 am a 10:00 am";
+      } else if (turnoLimpio === "noche") {
+        puede = (hora >= 17 && hora < 18); // Ajuste para 5 pm a 6 pm
+        rango = "5:00 pm a 6:00 pm";
+      } else {
+        msgReserva.textContent = "Turno no permitido para reservar tiquete.";
+        msgReserva.style.color = "#e03e3e";
+        return;
+      }
+
+      let hoy = getFechaLocalISO();
+      const { data: reserva } = await supabaseClient
+        .from('reservas_tiquete')
+        .select('*')
+        .eq('cedula', cedulaActual)
+        .eq('fecha', hoy)
+        .maybeSingle();
+
+      if (reserva) {
+        msgReserva.textContent = "Ya ha reservado su tiquete para hoy.";
+        msgReserva.style.color = "#18863d";
+        return;
+      }
+      if (!puede) {
+        msgReserva.innerHTML = "Solo puede reservar un tiquete en el horario permitido para su turno.";
+        msgReserva.style.color = "#b78c08";
+        divReserva.innerHTML = `<div class="info-rango">Horario para reservar: <b>${rango}</b></div>`;
+        return;
+      }
+
+      divReserva.innerHTML = `<button id="btnReservarTiquete">Reservar tiquete de comida</button><div class="info-rango">Horario: <b>${rango}</b></div>`;
+      document.getElementById('btnReservarTiquete').onclick = async function() {
+        msgReserva.textContent = '';
+        const { data: reserva2 } = await supabaseClient
+          .from('reservas_tiquete')
+          .select('*')
+          .eq('cedula', cedulaActual)
+          .eq('fecha', hoy)
+          .maybeSingle();
+        if (reserva2) {
+          msgReserva.textContent = "Ya reservó su tiquete para hoy.";
+          msgReserva.style.color = "#18863d";
+          divReserva.innerHTML = "";
+          return;
+        }
+        let horaReserva = ahora.toTimeString().slice(0,8);
+        let { error } = await supabaseClient.from('reservas_tiquete').insert({
+          cedula: cedulaActual,
+          nombre_completo: estudianteActual.nombre_completo || '',
+          area_academica: estudianteActual.area_academica || '',
+          turno: estudianteActual.turno || '',
+          fecha: hoy,
+          hora_reserva: horaReserva
+        });
+        if (error) {
+          msgReserva.textContent = "Error al reservar. Intente de nuevo.";
+          msgReserva.style.color = "#e03e3e";
+        } else {
+          msgReserva.textContent = "¡Reserva registrada! Presente su tiquete en el comedor.";
+          msgReserva.style.color = "#18863d";
+          divReserva.innerHTML = "";
+        }
+      };
     }
 
     document.getElementById("cambiarPass").onclick = function() {
@@ -413,7 +531,6 @@
 
     // --- Popup para instalación como app ---
     function mostrarPWAPrompt() {
-      // No mostrar si ya instaló como app (modo standalone)
       if (window.matchMedia('(display-mode: standalone)').matches) return;
       if (localStorage.getItem('ocultarPWAPrompt')) return;
       document.getElementById('pwaPrompt').style.display = 'block';
@@ -422,7 +539,6 @@
       document.getElementById('pwaPrompt').style.display = 'none';
       localStorage.setItem('ocultarPWAPrompt', '1');
     };
-    // Mostrar después de un pequeño delay para no ser invasivo
     setTimeout(mostrarPWAPrompt, 1200);
   </script>
 </body>
