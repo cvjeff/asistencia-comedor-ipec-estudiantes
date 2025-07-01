@@ -243,7 +243,6 @@
       input[type="text"], input[type="password"] { width: 97%; }
     }
     @keyframes fadein-pwa { from { opacity: 0; transform: translateY(60px);} to { opacity:1; transform:translateY(0);} }
-
     /* Estilo unificado para el botón del PWA prompt */
     #pwaPrompt button {
       margin-top: 15px;
@@ -472,15 +471,64 @@
 
     // CAMBIO CONTRASEÑA
     document.getElementById("cambiarPass").onclick = function() {
-      document.getElementById("loginView").style.display='none';
-      document.getElementById("qrView").style.display='none';
-      document.getElementById("cambioView").style.display='';
-      document.getElementById('msgCambio').textContent='';
+      document.getElementById("loginView").style.display = 'none';
+      document.getElementById("qrView").style.display = 'none';
+      document.getElementById("cambioView").style.display = '';
+      document.getElementById('msgCambio').textContent = '';
+      document.getElementById('msgCambio').style.color = '#e03e3e';
       document.getElementById('cambioForm').reset();
     };
+
     document.getElementById("cambioForm").onsubmit = async function(e){
       e.preventDefault();
-      /* ... tu lógica original ... */
+      const msgEl = document.getElementById('msgCambio');
+      msgEl.textContent = '';
+      msgEl.style.color = '#e03e3e';
+
+      const cedula = document.getElementById('cambioCedula').value.trim();
+      const oldPass = document.getElementById('oldPass').value.trim();
+      const newPass1 = document.getElementById('newPass1').value.trim();
+      const newPass2 = document.getElementById('newPass2').value.trim();
+
+      if (!cedula || !oldPass || !newPass1 || !newPass2) {
+        msgEl.textContent = "Todos los campos son obligatorios.";
+        return;
+      }
+      if (newPass1 !== newPass2) {
+        msgEl.textContent = "Las nuevas contraseñas no coinciden.";
+        return;
+      }
+
+      // Verificar credenciales actuales
+      const { data: loginData, error: errorLogin } = await supabaseClient
+        .from('estudiante_login')
+        .select('*')
+        .eq('cedula', cedula)
+        .eq('password', oldPass)
+        .maybeSingle();
+
+      if (errorLogin || !loginData) {
+        msgEl.textContent = "Cédula o contraseña actual incorrecta.";
+        return;
+      }
+
+      // Actualizar contraseña
+      const { error: errorUpdate } = await supabaseClient
+        .from('estudiante_login')
+        .update({ password: newPass1 })
+        .eq('cedula', cedula);
+
+      if (errorUpdate) {
+        msgEl.textContent = "Error al actualizar la contraseña. Intente de nuevo.";
+      } else {
+        msgEl.style.color = '#18863d';
+        msgEl.textContent = "Contraseña actualizada correctamente.";
+        setTimeout(() => {
+          mostrarLogin();
+          document.getElementById('msg').style.color = '#18863d';
+          document.getElementById('msg').textContent = "Contraseña cambiada con éxito. Inicie sesión.";
+        }, 2000);
+      }
     };
 
     // PWA prompt: mostrar/descartar con localStorage
